@@ -1,0 +1,98 @@
+package middleware
+
+import (
+	"fmt"
+	"myapp/src/data"
+	"net/http"
+	"strconv"
+	"strings"
+	"time"
+)
+
+// putSessionData is a helper method to put data into the session.
+func (m *Middleware) putSessionData(r *http.Request, key string, value interface{}) {
+	m.App.Session.Put(r.Context(), key, value)
+}
+
+// CheckRemember is a middleware to check for remember tokens.
+func (m *Middleware) CheckRemember(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if m.App.Session.Exists(r.Context(), "userID") {
+			// User is already logged in
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		// User not logged in
+		cookie, err := r.Cookie(fmt.Sprintf("_%s_remember", m.App.AppName))
+		if err != nil {
+			// No cookie
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		key := cookie.Value
+		var u data.User
+		if len(key) == 0 {
+			// Empty cookie value
+			m.deleteRememberCookie(w, r)
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		split := strings.Split(key, "|")
+		id, err := strconv.Atoi(split[0])
+		if err != nil {
+			// Invalid ID in the cookie
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		validHash := u.CheckForRememberToken(id, split[1])
+		if !validHash {
+			m.deleteRememberCookie(w, r)
+			m.putSessionData(r, "error", "You've been logged out from another device")
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		user, err := u.Get(id)
+		if err != nil {
+			// Error getting user data
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		m.putSessionData(r, "userID", user.ID)
+		m.putSessionData(r, "remember_token", split[1])
+
+		// Continue with the next handler
+		next.ServeHTTP(w, r)
+	})
+}
+
+// deleteRememberCookie deletes the remember cookie and logs out the user.
+func (m *Middleware) deleteRememberCookie(w http.ResponseWriter, r *http.Request) {
+	defer func() {
+		// Renew token
+		_ = m.App.Session.RenewToken(r.Context())
+	}()
+
+	// Delete cookie
+	cookieSettings := http.Cookie{
+		Name:     fmt.Sprintf("_%s_remember", m.App.AppName),
+		Value:    "",
+		Path:     "/",
+		Expires:  time.Now().Add(-100 * time.Hour),
+		HttpOnly: true,
+		Domain:   m.App.Session.Cookie.Domain,
+		MaxAge:   -1,
+		Secure:   m.App.Session.Cookie.Secure,
+		SameSite: http.SameSiteStrictMode,
+	}
+	http.SetCookie(w, &cookieSettings)
+
+	// Logout user
+	m.putSessionData(r, "userID", nil)
+	m.App.Session.Destroy(r.Context())
+}
