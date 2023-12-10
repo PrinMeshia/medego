@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
 
@@ -13,25 +14,28 @@ import (
 	"github.com/go-git/go-git/v5"
 )
 
+const (
+	skeletonRepoURL = "https://github.com/PrinMeshia/medego-skeleton"
+)
+
+var templateFiles = map[string]string{
+	"env":    "templates/env.txt",
+	"go.mod": "templates/go.mod.txt",
+}
+
 var appURL string
 
 func copyMakefile(appName, sourceFile string) {
 	source, err := os.Open(sourceFile)
-	if err != nil {
-		exitGracefully(err)
-	}
+	checkError(err, "Opening source file")
 	defer source.Close()
 
-	dest, err := os.Create(fmt.Sprintf("./%s/Makefile", appName))
-	if err != nil {
-		exitGracefully(err)
-	}
+	dest, err := os.Create(filepath.Join(".", appName, "Makefile"))
+	checkError(err, "Creating destination file")
 	defer dest.Close()
 
 	_, err = io.Copy(dest, source)
-	if err != nil {
-		exitGracefully(err)
-	}
+	checkError(err, "Copying content")
 }
 
 func doNew(appName string) {
@@ -48,33 +52,26 @@ func doNew(appName string) {
 
 	//clone skeleton files
 	color.Green("\tCloning repository...")
-	if _, err := git.PlainClone("./"+appName, false, &git.CloneOptions{
-		URL:      "https://github.com/PrinMeshia/medego-skeleton",
+	if _, err := git.PlainClone(filepath.Join(".", appName), false, &git.CloneOptions{
+		URL:      skeletonRepoURL,
 		Progress: os.Stdout,
 		Depth:    1,
 	}); err != nil {
 		exitGracefully(err)
 	}
 
-	if err := os.RemoveAll(fmt.Sprintf("./%s/.git", appName)); err != nil {
-		exitGracefully(err)
-	}
+	checkError(os.RemoveAll(filepath.Join(".", appName, ".git")), "Removing .git directory")
 
 	//create .env file
 	color.Yellow("\tCreating .env file...")
-	data, err := templateFS.ReadFile("templates/env.txt")
-	if err != nil {
-		exitGracefully(err)
-	}
+	envTemplate, err := templateFS.ReadFile(templateFiles["env"])
+	checkError(err, "Reading .env template")
 
-	env := string(data)
+	env := string(envTemplate)
 	env = strings.ReplaceAll(env, "${APP_NAME}", appName)
 	env = strings.ReplaceAll(env, "${KEY}", core.RandomString(32))
 
-	err = copyDataToFile([]byte(env), fmt.Sprintf("./%s/.env", appName))
-	if err != nil {
-		exitGracefully(err)
-	}
+	checkError(copyDataToFile([]byte(env), filepath.Join(".", appName, ".env")), "Creating .env file")
 
 	//Makefile
 	if runtime.GOOS == "windows" {
@@ -87,20 +84,15 @@ func doNew(appName string) {
 
 	//update go.mod
 	color.Yellow("\tCreating go.mod file...")
-	_ = os.Remove("./" + appName + "/go.mod")
+	checkError(os.Remove(filepath.Join(".", appName, "go.mod")), "Removing go.mod file")
 
-	data, err = templateFS.ReadFile("templates/go.mod.txt")
-	if err != nil {
-		exitGracefully(err)
-	}
+	goModTemplate, err := templateFS.ReadFile(templateFiles["go.mod"])
+	checkError(err, "Reading go.mod template")
 
-	mod := string(data)
+	mod := string(goModTemplate)
 	mod = strings.ReplaceAll(mod, "${APP_NAME}", appURL)
 
-	err = copyDataToFile([]byte(mod), "./"+appName+"/go.mod")
-	if err != nil {
-		exitGracefully(err)
-	}
+	checkError(copyDataToFile([]byte(mod), filepath.Join(".", appName, "go.mod")), "Creating go.mod file")
 
 	// update existing .go files with correct name/imports
 	color.Yellow("\tUpdating source files...")
@@ -110,11 +102,8 @@ func doNew(appName string) {
 	// run go mod tidy in the project directory
 	color.Yellow("\tRunning go mod tidy...")
 	cmd := exec.Command("go", "mod", "tidy")
-	err = cmd.Start()
-	if err != nil {
-		exitGracefully(err)
-	}
-
+	checkError(cmd.Start(), "Starting go mod tidy")
+	checkError(cmd.Wait(), "Waiting for go mod tidy to complete")
 	color.Green("Done building " + appURL)
 	color.Green("Go build something awesome")
 

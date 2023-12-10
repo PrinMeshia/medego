@@ -75,7 +75,11 @@ func showHelp() {
 	make mail <name>	- creates two starter mail templates in the mail directory
 	`)
 }
-
+func checkError(err error, message string) {
+	if err != nil {
+		exitGracefully(fmt.Errorf("%s: %w", message, err))
+	}
+}
 func exitGracefully(err error, msg ...string) {
 	message := ""
 	if len(msg) > 0 {
