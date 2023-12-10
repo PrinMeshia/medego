@@ -16,18 +16,18 @@ func doMake(arg2, arg3 string) error {
 
 	switch arg2 {
 	case "key":
-		rnd := cel.RandomString(32)
+		rnd := core.RandomString(32)
 		color.Yellow("32 characters encryption key: %s", rnd)
 	case "migration":
-		dbType := cel.DB.DataType
+		dbType := core.DB.DataType
 		if arg3 == "" {
 			exitGracefully(errors.New("you must give the migration a name"))
 		}
 
 		fileName := fmt.Sprintf("%d_%s", time.Now().UnixMicro(), arg3)
 
-		upFile := cel.RootPath + "/migrations/" + fileName + "." + dbType + ".up.sql"
-		downFile := cel.RootPath + "/migrations/" + fileName + "." + dbType + ".down.sql"
+		upFile := core.RootPath + "/migrations/" + fileName + "." + dbType + ".up.sql"
+		downFile := core.RootPath + "/migrations/" + fileName + "." + dbType + ".down.sql"
 
 		if err := copyFilefromTemplate("templates/migrations/"+dbType+"/migration.up.sql", upFile); err != nil {
 			exitGracefully(err)
@@ -44,7 +44,7 @@ func doMake(arg2, arg3 string) error {
 		if arg3 == "" {
 			exitGracefully(errors.New("you must give the handler a name"))
 		}
-		fileName := cel.RootPath + "/src/handlers/" + strings.ToLower(arg3) + ".go"
+		fileName := core.RootPath + "/src/handlers/" + strings.ToLower(arg3) + ".go"
 		if fileExists(fileName) {
 			exitGracefully(errors.New(fileName + " already exists!"))
 		}
@@ -82,7 +82,7 @@ func doMake(arg2, arg3 string) error {
 			tableName = strings.ToLower(plur.Plural(arg3))
 		}
 
-		fileName := cel.RootPath + "/src/data/" + strings.ToLower(modelName) + ".go"
+		fileName := core.RootPath + "/src/data/" + strings.ToLower(modelName) + ".go"
 		if fileExists(fileName) {
 			exitGracefully(errors.New(fileName + " already exists!"))
 		}
@@ -97,13 +97,13 @@ func doMake(arg2, arg3 string) error {
 		if arg3 == "" {
 			exitGracefully(errors.New("template name required"))
 		}
-		htmlMail := cel.RootPath + "/mail/" + strings.ToLower(arg3) + ".html.tmpl"
-		plainMail := cel.RootPath + "/mail/" + strings.ToLower(arg3) + ".plain.tmpl"
+		htmlMail := core.RootPath + "/mail/" + strings.ToLower(arg3) + ".html.tmpl"
+		plainMail := core.RootPath + "/mail/" + strings.ToLower(arg3) + ".plain.tmpl"
 
-		if err := copyFilefromTemplate("templates/mailer/mail.html.tmpl",htmlMail); err != nil {
+		if err := copyFilefromTemplate("templates/mailer/mail.html.tmpl", htmlMail); err != nil {
 			exitGracefully(err)
 		}
-		if err := copyFilefromTemplate("templates/mailer/mail.plain.tmpl",plainMail); err != nil {
+		if err := copyFilefromTemplate("templates/mailer/mail.plain.tmpl", plainMail); err != nil {
 			exitGracefully(err)
 		}
 
@@ -111,8 +111,6 @@ func doMake(arg2, arg3 string) error {
 		if err := doSessionTable(); err != nil {
 			exitGracefully(err)
 		}
-	
-	
 
 	}
 

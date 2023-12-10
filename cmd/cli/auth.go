@@ -10,10 +10,10 @@ import (
 
 func doAuth() error {
 	//migrations
-	dbType := cel.DB.DataType
+	dbType := core.DB.DataType
 	fileName := fmt.Sprintf("%d_create_auth_tables", time.Now().UnixMicro())
-	upFile := cel.RootPath + "/migrations/" + fileName + ".up.sql"
-	downFile := cel.RootPath + "/migrations/" + fileName + ".down.sql"
+	upFile := core.RootPath + "/migrations/" + fileName + ".up.sql"
+	downFile := core.RootPath + "/migrations/" + fileName + ".down.sql"
 
 	log.Println(dbType, upFile, downFile)
 
@@ -30,49 +30,49 @@ func doAuth() error {
 	}
 
 	//copy files over
-	if err := copyFilefromTemplate("templates/data/user.go.txt", cel.RootPath+"/src/data/user.go"); err != nil {
+	if err := copyFilefromTemplate("templates/data/user.go.txt", core.RootPath+"/src/data/user.go"); err != nil {
 		exitGracefully(err)
 	}
 
-	if err := copyFilefromTemplate("templates/data/token.go.txt", cel.RootPath+"/src/data/token.go"); err != nil {
+	if err := copyFilefromTemplate("templates/data/token.go.txt", core.RootPath+"/src/data/token.go"); err != nil {
 		exitGracefully(err)
 	}
-	if err := copyFilefromTemplate("templates/data/remember_token.go.txt", cel.RootPath+"/src/data/token.go"); err != nil {
+	if err := copyFilefromTemplate("templates/data/remember_token.go.txt", core.RootPath+"/src/data/token.go"); err != nil {
 		exitGracefully(err)
 	}
 
 	//copy middleware
-	if err := copyFilefromTemplate("templates/middleware/auth.go.txt", cel.RootPath+"/src/middleware/auth.go"); err != nil {
+	if err := copyFilefromTemplate("templates/middleware/auth.go.txt", core.RootPath+"/src/middleware/auth.go"); err != nil {
 		exitGracefully(err)
 	}
 
-	if err := copyFilefromTemplate("templates/middleware/auth-token.go.txt", cel.RootPath+"/src/middleware/auth-token.go"); err != nil {
+	if err := copyFilefromTemplate("templates/middleware/auth-token.go.txt", core.RootPath+"/src/middleware/auth-token.go"); err != nil {
 		exitGracefully(err)
 	}
-	if err := copyFilefromTemplate("templates/middleware/remember.go.txt", cel.RootPath+"/src/middleware/auth-token.go"); err != nil {
+	if err := copyFilefromTemplate("templates/middleware/remember.go.txt", core.RootPath+"/src/middleware/auth-token.go"); err != nil {
 		exitGracefully(err)
 	}
 	//copy handler
-	if err := copyFilefromTemplate("templates/handlers/auth-handlers.go.txt", cel.RootPath+"/src/handlers/auth-handlers.go"); err != nil {
+	if err := copyFilefromTemplate("templates/handlers/auth-handlers.go.txt", core.RootPath+"/src/handlers/auth-handlers.go"); err != nil {
 		exitGracefully(err)
 	}
 
 	//copy templates
-	if err := copyFilefromTemplate("templates/views/login.jet", cel.RootPath+"/templates/auth/login.jet"); err != nil {
+	if err := copyFilefromTemplate("templates/views/login.jet", core.RootPath+"/templates/auth/login.jet"); err != nil {
 		exitGracefully(err)
 	}
-	if err := copyFilefromTemplate("templates/views/forgot.jet", cel.RootPath+"/templates/auth/forgot.jet"); err != nil {
+	if err := copyFilefromTemplate("templates/views/forgot.jet", core.RootPath+"/templates/auth/forgot.jet"); err != nil {
 		exitGracefully(err)
 	}
-	if err := copyFilefromTemplate("templates/views/reset-password.jet", cel.RootPath+"/templates/auth/reset-password.jet"); err != nil {
+	if err := copyFilefromTemplate("templates/views/reset-password.jet", core.RootPath+"/templates/auth/reset-password.jet"); err != nil {
 		exitGracefully(err)
 	}
 
 	//copy mailer
-	if err := copyFilefromTemplate("templates/mailer/password-reset.html.tmpl", cel.RootPath+"/mail/password-reset.html.tmpl"); err != nil {
+	if err := copyFilefromTemplate("templates/mailer/password-reset.html.tmpl", core.RootPath+"/mail/password-reset.html.tmpl"); err != nil {
 		exitGracefully(err)
 	}
-	if err := copyFilefromTemplate("templates/mailer/password-reset.plain.tmpl", cel.RootPath+"/mail/password-reset.plain.tmpl"); err != nil {
+	if err := copyFilefromTemplate("templates/mailer/password-reset.plain.tmpl", core.RootPath+"/mail/password-reset.plain.tmpl"); err != nil {
 		exitGracefully(err)
 	}
 

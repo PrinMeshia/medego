@@ -3,27 +3,35 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"slices"
+	"strings"
 
 	"github.com/fatih/color"
 	"github.com/joho/godotenv"
 )
 
-func setup() {
-	if err := godotenv.Load(); err != nil {
-		exitGracefully(err)
+func setup(arg1, arg2 string) {
+	commands := []string{"new", "version", "help"}
+
+	if isPresent := slices.Contains(commands, arg1); !isPresent {
+		if err := godotenv.Load(); err != nil {
+			exitGracefully(err)
+		}
+
+		path, err := os.Getwd()
+		if err != nil {
+			exitGracefully(err)
+		}
+
+		core.RootPath = path
+		core.DB.DataType = os.Getenv("DATABASE_TYPE")
 	}
 
-	path, err := os.Getwd()
-	if err != nil {
-		exitGracefully(err)
-	}
-
-	cel.RootPath = path
-	cel.DB.DataType = os.Getenv("DATABASE_TYPE")
 }
 
 func getDSN() string {
-	dbType := cel.DB.DataType
+	dbType := core.DB.DataType
 
 	if dbType == "pgx" {
 		dbType = "postgres"
@@ -49,7 +57,7 @@ func getDSN() string {
 		}
 		return dsn
 	}
-	return "mysql://" + cel.BuildDSN()
+	return "mysql://" + core.BuildDSN()
 }
 
 func showHelp() {
@@ -80,9 +88,52 @@ func exitGracefully(err error, msg ...string) {
 
 	if len(message) > 0 {
 		color.Yellow(message)
-	} else {
-		color.Green("Finished!")
 	}
 
 	os.Exit(0)
+}
+
+func updateSourceFiles(path string, fi os.FileInfo, err error) error {
+	// check for an error before doing anything else
+	if err != nil {
+		return err
+	}
+
+	// check if current file is directory
+	if fi.IsDir() {
+		return nil
+	}
+
+	// only check go files
+	matched, err := filepath.Match("*.go", fi.Name())
+	if err != nil {
+		return err
+	}
+
+	// we have a matching file
+	if matched {
+		// read file contents
+		read, err := os.ReadFile(path)
+		if err != nil {
+			exitGracefully(err)
+		}
+
+		newContents := strings.Replace(string(read), "myapp", appURL, -1)
+
+		// write the changed file
+		err = os.WriteFile(path, []byte(newContents), 0)
+		if err != nil {
+			exitGracefully(err)
+		}
+	}
+
+	return nil
+}
+
+func updateSource() {
+	// walk entire project folder, including subfolders
+	err := filepath.Walk(".", updateSourceFiles)
+	if err != nil {
+		exitGracefully(err)
+	}
 }

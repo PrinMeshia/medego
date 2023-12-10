@@ -7,7 +7,7 @@ import (
 
 func doSessionTable() error {
 
-	dbType := cel.DB.DataType
+	dbType := core.DB.DataType
 
 	if dbType == "mariadb" {
 		dbType = "mysql"
@@ -17,8 +17,8 @@ func doSessionTable() error {
 	}
 	fileName := fmt.Sprintf("%d_create_sesssions_table", time.Now().UnixMicro())
 
-	upFile := cel.RootPath + "/migrations/" + fileName + "." + dbType + ".up.sql"
-	downFile := cel.RootPath + "/migrations/" + fileName + "." + dbType + ".down.sql"
+	upFile := core.RootPath + "/migrations/" + fileName + "." + dbType + ".up.sql"
+	downFile := core.RootPath + "/migrations/" + fileName + "." + dbType + ".down.sql"
 
 	if err := copyFilefromTemplate("templates/migrations/"+dbType+"/session.sql", upFile); err != nil {
 		exitGracefully(err)

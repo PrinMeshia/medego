@@ -10,7 +10,7 @@ import (
 
 const version = "1.0.0"
 
-var cel medego.Medego
+var core medego.Medego
 
 func main() {
 	var message string
@@ -19,7 +19,7 @@ func main() {
 		exitGracefully(err)
 	}
 
-	setup()
+	setup(arg1, arg2)
 
 	switch arg1 {
 	case "help":
